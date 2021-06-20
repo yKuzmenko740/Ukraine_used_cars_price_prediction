@@ -80,6 +80,7 @@ class DataReader:
         encoder = BinaryEncoder(cols=cat_cols, return_df=True, verbose=False)
         self.__CODER = encoder
         binary_encoded_df = encoder.fit_transform(df)
+
         return binary_encoded_df
 
     def get_encoder(self) -> BinaryEncoder:
