@@ -18,5 +18,5 @@ You can find all data in Data folder
 * Run training via `python User_pipeline.py`
 
 ## Training
-The whole training pipeline can be found in [Main]\[User_pipeline](train_pipeline.py).
+The whole training pipeline can be found in [Main]\\[User_pipeline](train_pipeline.py).
 
