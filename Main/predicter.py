@@ -74,6 +74,7 @@ class CarPricePredictor(LGBMRegPredicter):
     def fit(self, train_set: lgb.Dataset, test_set: lgb.Dataset = None):
         if 'valid_sets' in self._train_params.keys() and test_set is None:
             test_set = self._train_params['valid_sets']
+            self._model = self._model.train(self._model_params, train_set,  **self._train_params)
         self._is_fit = True
         self._model = self._model.train(self._model_params, train_set, valid_sets=test_set, **self._train_params)
 
@@ -87,4 +88,8 @@ class CarPricePredictor(LGBMRegPredicter):
 
 
     def save_model(self) :
+        """
+        Saving model into pickle file
+        :return:
+        """
         joblib.dump(self._model, 'lgb_car_price.pkl')

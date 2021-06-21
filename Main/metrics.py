@@ -5,7 +5,6 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 def evaluateRegressor(true,predicted) -> np.array:
     """"
         get main metrics
-        
         return: np.array with main metrics (mse, mae, rmse, logrmse)
     """
     MSE = mean_squared_error(true,predicted,squared = True)

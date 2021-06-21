@@ -2,14 +2,24 @@ import numpy as np
 import pandas as pd
 from category_encoders import BinaryEncoder
 import warnings
+from config import Config
+import lightgbm as lgb
 
 
 class DataReader:
+    """
+    Class for reading and preprocessing data
+    """
     _is_cleaned = False
     __CODER = None
 
     @staticmethod
     def __transform_benz(data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Transforming dataframe column Benz using mapping and dict
+        :param data: dataframe to transform
+        :return: transformed dataframe:
+        """
         dct = {"Дизель": 'dis', 'Бензин': 'benz', 'Газ / Бензин': 'gb', "Газ": 'gas', 'Гібрид': 'gibr',
                'Електро': 'elctr',
                'Газ пропан-бутан': 'gpb', 'Газ метан': 'gb'}
@@ -17,11 +27,29 @@ class DataReader:
 
     @staticmethod
     def __transform_trans(data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Transforming dataframe column Transmission using mapping and dict
+        :param data: dataframe to transform
+        :return: transformed dataframe
+        """
         dct = {'Автомат': 'auto', 'Ручна/Механіка': 'mech', 'Варіатор': 'var', 'Типтронік': 'tip', 'Робот': 'rob'}
         return data.replace({'Transmission': dct})
 
-    def read_cars_data(self, data_path: str) -> pd.DataFrame:
-        df = pd.read_csv(data_path)
+    @staticmethod
+    def create_lgb_dataset(data:pd.DataFrame) -> lgb.Dataset:
+        """
+        Creating lightgbm dataset with label Price_USD
+        :param data: dataframe
+        :return: lightgbm dataset
+        """
+        return lgb.Dataset(data=data.drop('Price_USD', axis=1), label=data.Price_USD)
+    def read_cars_data(self, conf:Config) -> pd.DataFrame:
+        """
+        reading and cleaning used cars data
+        :param conf: file path
+        :return: cleaned pandas Dataframe
+        """
+        df = pd.read_csv(conf.main_data)
 
         # droping local brands
         ukr_indexes = df[df.Brand.apply(lambda x: self._hasukr(x))].index
@@ -58,6 +86,11 @@ class DataReader:
         return df
 
     def data_processing(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Scaling and encoding dataframe
+        :param df: cleaned dataframe
+        :return: binary encoded dataframe
+        """
         if not self._is_cleaned:
             warnings.warn("Your data is not cleaned. Read data through read_cars_data() ")
 
@@ -80,12 +113,16 @@ class DataReader:
         encoder = BinaryEncoder(cols=cat_cols, return_df=True, verbose=False)
         self.__CODER = encoder
         binary_encoded_df = encoder.fit_transform(df)
-
+        binary_encoded_df.drop(['level_0', 'index'], axis=1, inplace=True)
         return binary_encoded_df
 
     def get_encoder(self) -> BinaryEncoder:
         return self.__CODER
 
     def _hasukr(self, s) -> bool:
+        """
+        Check if ukrainian in string
+        :param s: string
+        """
         lower = set('абвгґдеєжзиіїйклмнопрстуфхцчшщьюя')
         return lower.intersection(s.lower()) != set()

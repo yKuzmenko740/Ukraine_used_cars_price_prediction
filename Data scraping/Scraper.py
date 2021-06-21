@@ -1,3 +1,5 @@
+from typing import List
+
 import requests
 from bs4 import BeautifulSoup as bs
 import pandas as pd
@@ -5,6 +7,11 @@ import re
 
 
 class Scraper:
+
+    """
+    Class for scraping https://auto.ria.com/uk/
+    Created dataset contains (Brand,Model, Year, Run, City,Benz, L(litres), Transmission, Price_USD)
+    """
     _path_for_results = None
     _home_url = None
     __BENZO = {'Бензин', 'Дизель', 'Газ', 'Газ / Бензин', 'Гібрид', 'Електро', 'Інше', 'Газ метан', 'Газ пропан-бутан'}
@@ -18,29 +25,56 @@ class Scraper:
 
     @staticmethod
     def __check_start_url(url: str) -> bool:
+        """
+        checks we can change page in url
+        :param url: url
+        """
         pattern = r'page={(.*?)}'
         return True if re.match(pattern, url, re.IGNORECASE) is not None else False
 
     @staticmethod
     def _get_html(link) -> bs:
+        """
+        Getting html content of page
+        :param link: url
+        :return: html content of page
+        """
         page = requests.get(link, headers={'Connection': 'close'})
         return bs(page.content, 'html.parser')
 
     @staticmethod
     def _get_tickets(htmlContent):
+        """
+        Getting list of tabs with information about the cars
+        :param htmlContent: html of page
+        :return: list of  tabs with cars
+        """
         return htmlContent.find_all('div', class_='content-bar')
 
     def to_csv(self, file_name: str):
+        """
+        Converting list of dicts to csv
+        :param file_name: path to file
+        """
         df = pd.DataFrame(self.__DATA)
         df.to_csv(self._path_for_results + file_name.strip(), index=False)
 
     def _get_link(self, tab) -> bool:
+        """
+        Check if it is an auction of car
+        :param tab: tab with info about the car
+        """
         link = tab.find('a', class_='address', href=True)['href']
         if 'auction' not in link.split('/'):
             return link
         return False
 
-    def __get_brand_model(self, link):
+    def __get_brand_model(self, link) -> List[str,str,str]:
+        """
+        Getting brand model and year of the car
+        :param link: link to page with car info
+        :return: brand,model and year
+        """
         soup_page = Scraper._get_html(link)
         h1 = soup_page.find('h1', class_='head')
         spans = h1.find_all('span')
@@ -49,7 +83,12 @@ class Scraper:
         year = h1.text.split()[-1]
         return [brand, name, year]
 
-    def parse_rage(self, page_range: list):
+    def parse_range(self, page_range: list):
+        """
+        Lopping throught page_range and parsing
+        :param page_range: range of page numbers to parse
+        :return: None
+        """
         for i in page_range:
             try:
                 d_len_before = len(self.__DATA)
@@ -65,6 +104,11 @@ class Scraper:
         print(f'{len(page_range)} parsed')
 
     def parse_page(self, page_num: int):
+        """
+        Parsing single page
+        :param page_num: number of page
+        :return: None
+        """
         try:
             soup_page = Scraper._get_html(self._home_url.format(page_num))
         except:
